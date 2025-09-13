@@ -114,6 +114,7 @@ class DataFetcher:
                         author_date_unix=int(adate),
                         committer_date_unix=int(cdate),
                         subject=subject,
+                        repository=repository,
                     )
                     commits.append(commit)
                 except ValueError:
@@ -188,6 +189,7 @@ class DataFetcher:
                     author_date_unix=int(adate),
                     committer_date_unix=int(cdate),
                     subject=subject,
+                    repository=repository,
                 )
                 return commit
             except ValueError:

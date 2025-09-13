@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 
 @dataclass
@@ -18,22 +18,15 @@ class Commit:
     author_date_unix: int
     committer_date_unix: int
     subject: str
+    repository: str
 
 
 @dataclass
-class FileRename:
-    """
-    class to represent the action of renaming a file in git.
-    """
+class FileChange:
+    """Represents a single file change within a milestone."""
 
-
-@dataclass
-class FileDiff:
-    """
-    Class that contains top-level file diff info and can be used to fetch more information.
-    """
-
-    filename: str
-    insertions: int
-    deletions: int
-    renames: List[FileRename]
+    status: str
+    path: str
+    old_path: Optional[str] = None
+    insertions: int = 0
+    deletions: int = 0
