@@ -28,7 +28,20 @@ testrepo = "patrick-gu/toot"
 d = DataFetcher()
 empty_directory("../workspace")
 repo = d.fetch_github_repository(testrepo, "../workspace")
-commits = d.get_commit_log(repo)
+commits = d.get_commit_log(repo)[::-1]
+first_commit = d.get_boundary_commit(repo)
+last_commit = d.get_boundary_commit(repo, False)
+print(first_commit)
+print(last_commit)
+commits = [first_commit] + commits
+if last_commit.hash != commits[-1].hash:
+    commits.append(last_commit)
+
 print("Found commits:", len(commits))
-for commit in commits[:10]:
+print("first 5:")
+for commit in commits[:5]:
+    print(commit)
+print("")
+print("Last 5:")
+for commit in commits[-5:]:
     print(commit)
