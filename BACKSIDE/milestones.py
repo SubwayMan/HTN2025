@@ -21,6 +21,8 @@ class RawMilestone:
     - Files changed & amount of insertions/deletions (list of FileDiff)
     """
 
+    time_start: int
+    time_end: int
     start_commit_hash: str
     end_commit_hash: str
     messages: List[str]
@@ -138,6 +140,8 @@ def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:
     )
 
     return RawMilestone(
+        time_start=c1.committer_date_unix,
+        time_end=c2.committer_date_unix,
         start_commit_hash=start_hash,
         end_commit_hash=end_hash,
         messages=result.stdout.split("\n")[::-1],

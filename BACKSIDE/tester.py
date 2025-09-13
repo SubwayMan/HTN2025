@@ -2,6 +2,7 @@ from fetcher import DataFetcher
 import os
 import shutil
 from milestones import get_milestone_data
+from datetime import datetime
 
 
 def empty_directory(directory_path):
@@ -24,6 +25,14 @@ def empty_directory(directory_path):
             shutil.rmtree(full_path)  # Remove the subdirectory and its contents
 
 
+def print_unix_timestamp(timestamp):
+    dt_object = datetime.fromtimestamp(timestamp)
+
+    formatted_date = dt_object.strftime("%Y-%m-%d %H:%M:%S")
+
+    print(formatted_date)
+
+
 testrepo = "patrick-gu/toot"
 d = DataFetcher()
 empty_directory("../workspace")
@@ -40,6 +49,12 @@ for dc in milestone.changes:
     print(dc)
 for message in milestone.messages:
     print(message)
+
+print("Milestone start:")
+print_unix_timestamp(milestone.time_start)
+print("Milestone end:")
+print_unix_timestamp(milestone.time_end)
+
 
 paths = [a.path for a in milestone.changes]
 while True:
