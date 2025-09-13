@@ -72,7 +72,7 @@ def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:
         "--numstat",
         f"{start_hash}..{end_hash}",
     ]
-    print(" ".join(numstat_command))
+    # print(" ".join(numstat_command))
 
     result = sp.run(
         numstat_command, cwd=repo_path, capture_output=True, text=True, check=True
@@ -84,6 +84,10 @@ def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:
             line = shortened_rename_regex.sub(r"\1\2", line)
         insertions, deletions, *extras = line.split()
         filename = extras[-1]
+        if insertions == "-":
+            insertions = "0"
+        if deletions == "-":
+            deletions = "0"
         file_to_stats[filename] = (int(insertions), int(deletions))
 
     command = [
@@ -93,7 +97,7 @@ def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:
         "--name-status",
         f"{start_hash}..{end_hash}",
     ]
-    print(" ".join(command))
+    # print(" ".join(command))
     # TODO: handle failure
     result = sp.run(command, cwd=repo_path, capture_output=True, text=True, check=True)
 
