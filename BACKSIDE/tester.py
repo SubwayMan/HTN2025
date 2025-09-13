@@ -38,3 +38,5 @@ if last_commit.hash != commits[-1].hash:
 milestone = get_milestone_data(commits[1], commits[2])
 for dc in milestone.changes:
     print(dc)
+for message in milestone.messages:
+    print(message)

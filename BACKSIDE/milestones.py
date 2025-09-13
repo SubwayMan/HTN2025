@@ -48,7 +48,9 @@ class RawMilestone:
 
 
 def generate_milestones(commits: List[Commit]) -> Generator[RawMilestone]:
-    milestones = []
+    n = len(commits)
+    for i in range(1, n):
+        yield get_milestone_data(commits[i - 1], commits[i])
 
 
 def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:
@@ -114,23 +116,27 @@ def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:
             changes[-1].insertions = ins
             changes[-1].deletions = dels
 
-    numstat_command = [
+    # get commit messages
+    commit_message_command = [
         "git",
         "--no-pager",
-        "diff",
-        "--numstat",
+        "log",
+        '--pretty=format:"%s"',
         f"{start_hash}..{end_hash}",
     ]
-    print(" ".join(numstat_command))
 
     result = sp.run(
-        numstat_command, cwd=repo_path, capture_output=True, text=True, check=True
+        commit_message_command,
+        cwd=repo_path,
+        capture_output=True,
+        text=True,
+        check=True,
     )
 
     return RawMilestone(
         start_commit_hash=start_hash,
         end_commit_hash=end_hash,
-        messages=[],
+        messages=result.stdout.split("\n")[::-1],
         changes=changes,
         _repo_path=repo_path,
     )
