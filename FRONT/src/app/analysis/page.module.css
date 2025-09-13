@@ -1,0 +1,167 @@
+.container {
+  min-height: 100vh;
+  background-color: rgb(248 250 252);
+}
+
+.container.darkMode {
+  background-color: rgb(15 23 42);
+}
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: white;
+  border-bottom: 1px solid rgb(226 232 240);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.container.darkMode .navbar {
+  background-color: rgb(30 41 59);
+  border-bottom-color: rgb(51 65 85);
+}
+
+.navbarContent {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .navbarContent {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .navbarContent {
+    padding: 0 2rem;
+  }
+}
+
+.navbarInner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 4rem;
+}
+
+.projectTitle {
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgb(30 41 59);
+}
+
+.container.darkMode .projectTitle {
+  color: rgb(241 245 249);
+}
+
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.newAnalysisButton {
+  padding: 0.5rem 1rem;
+  background-color: rgb(37 99 235);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.newAnalysisButton:hover {
+  background-color: rgb(29 78 216);
+}
+
+.container.darkMode .newAnalysisButton {
+  background-color: rgb(59 130 246);
+}
+
+.container.darkMode .newAnalysisButton:hover {
+  background-color: rgb(37 99 235);
+}
+
+.main {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .main {
+    padding: 2rem 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .main {
+    padding: 2rem 2rem;
+  }
+}
+
+.resultsContainer {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border: 1px solid rgb(226 232 240);
+  padding: 1.5rem;
+}
+
+.container.darkMode .resultsContainer {
+  background-color: rgb(30 41 59);
+  border-color: rgb(51 65 85);
+}
+
+.resultsTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: rgb(30 41 59);
+  margin-bottom: 1rem;
+}
+
+.container.darkMode .resultsTitle {
+  color: rgb(241 245 249);
+}
+
+.resultsText {
+  color: rgb(75 85 99);
+}
+
+.container.darkMode .resultsText {
+  color: rgb(148 163 184);
+}
+
+.themeToggle {
+  padding: 0.5rem;
+  background-color: transparent;
+  border: 2px solid rgb(226 232 240);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.themeToggle:hover {
+  background-color: rgb(248 250 252);
+}
+
+.container.darkMode .themeToggle {
+  border-color: rgb(51 65 85);
+  color: rgb(241 245 249);
+}
+
+.container.darkMode .themeToggle:hover {
+  background-color: rgb(51 65 85);
+}
+
+.themeIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}

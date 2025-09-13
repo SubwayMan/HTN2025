@@ -1,0 +1,148 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, rgb(248 250 252), rgb(226 232 240));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.container.darkMode {
+  background: linear-gradient(to bottom right, rgb(15 23 42), rgb(30 41 59));
+}
+
+.content {
+  width: 100%;
+  max-width: 64rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 3.75rem;
+  font-weight: bold;
+  color: rgb(30 41 59);
+  margin-bottom: 4rem;
+  letter-spacing: -0.025em;
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: 6rem;
+  }
+}
+
+.container.darkMode .title {
+  color: rgb(241 245 249);
+}
+
+.form {
+  width: 100%;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.inputContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  padding: 1.25rem 1.5rem;
+  font-size: 1.125rem;
+  border: 2px solid rgb(203 213 225);
+  border-radius: 0.75rem 0 0 0.75rem;
+  background-color: white;
+  color: rgb(30 41 59);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input::placeholder {
+  color: rgb(100 116 139);
+}
+
+.input:focus {
+  border-color: rgb(59 130 246);
+}
+
+.container.darkMode .input {
+  border-color: rgb(75 85 99);
+  background-color: rgb(51 65 85);
+  color: rgb(241 245 249);
+}
+
+.container.darkMode .input::placeholder {
+  color: rgb(148 163 184);
+}
+
+.container.darkMode .input:focus {
+  border-color: rgb(96 165 250);
+}
+
+.submitButton {
+  padding: 1.25rem 2rem;
+  background-color: rgb(37 99 235);
+  color: white;
+  border: 2px solid rgb(37 99 235);
+  border-radius: 0 0.75rem 0.75rem 0;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.submitButton:hover {
+  background-color: rgb(29 78 216);
+}
+
+.container.darkMode .submitButton {
+  background-color: rgb(59 130 246);
+  border-color: rgb(59 130 246);
+}
+
+.container.darkMode .submitButton:hover {
+  background-color: rgb(37 99 235);
+}
+
+.arrow {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.themeToggle {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 50;
+  padding: 0.75rem;
+  background-color: white;
+  border: 2px solid rgb(226 232 240);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.themeToggle:hover {
+  background-color: rgb(248 250 252);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+.container.darkMode .themeToggle {
+  background-color: rgb(30 41 59);
+  border-color: rgb(51 65 85);
+  color: rgb(241 245 249);
+}
+
+.container.darkMode .themeToggle:hover {
+  background-color: rgb(51 65 85);
+}
+
+.themeIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
