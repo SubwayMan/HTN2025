@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 import subprocess as sp
 from typing import Generator, List, Optional
 from gitmodels import Commit, FileChange
 
 
+@dataclass
 class RawMilestone:
     """
     Class to represent a raw, unprocessed milestone.
@@ -13,7 +15,7 @@ class RawMilestone:
 
     start_commit_hash: str
     end_commit_hash: str
-    summary: str
+    messages: List[str]
     changes: List[FileChange]
     _repo_path: str  # Store repo path for internal use
 
@@ -40,9 +42,6 @@ class RawMilestone:
             print(f"Error getting diff for {file_path}: {e.stderr}")
             return None
 
-    def __init__(self) -> None:
-        pass
-
 
 def generate_milestones(commits: List[Commit]) -> Generator[RawMilestone]:
     milestones = []
@@ -50,20 +49,16 @@ def generate_milestones(commits: List[Commit]) -> Generator[RawMilestone]:
 
 def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:
     """Runs git diff and parses the output to create a Milestone object."""
-    # Use --numstat AND --name-status. Git prints numstat block first, then name-status.
     start_hash = c1.hash
     end_hash = c2.hash
     command = [
         "git",
+        "--no-pager",
         "diff",
-        "--numstat",
         "--name-status",
-        "-M",
-        "--shortstat",
-        start_hash,
-        end_hash,
+        f"{start_hash}..{end_hash}",
     ]
-
+    print(" ".join(command))
     repo_path = c1.repository
     # TODO: handle failure
     result = sp.run(command, cwd=repo_path, capture_output=True, text=True, check=True)
@@ -72,62 +67,26 @@ def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:
     # TODO: handle empty diffs
     # if not lines or len(lines) < 2:
     # return None
-    breakpoint()
+    changes = []
 
-    # --- PARSING LOGIC ---
-    summary = lines[-1]
-
-    # Separate the numstat lines from the name-status lines
-    # There will be a blank line separating the blocks
-    blank_line_index = lines.index("")
-    numstat_lines = lines[:blank_line_index]
-    name_status_lines = lines[blank_line_index + 1 : -1]
-
-    # 1. Parse numstat to get insertions/deletions for each path
-    stats_by_path = {}
-    for line in numstat_lines:
-        parts = line.split("\t")
-        # Handle binary files which have '-' for insertions/deletions
-        insertions = 0 if parts[0] == "-" else int(parts[0])
-        deletions = 0 if parts[1] == "-" else int(parts[1])
-        path = parts[2]
-        stats_by_path[path] = {"insertions": insertions, "deletions": deletions}
-
-    # 2. Parse name-status to get status and handle renames
-    file_changes = []
-    for line in name_status_lines:
-        parts = line.split("\t")
-        status_code = parts[0]
-
-        insertions, deletions = 0, 0
-
-        if status_code.startswith("R"):  # Handle renames
-            status = "R"
-            old_path = parts[1]
-            path = parts[2]
-            # For renames, the numstat path is the *new* path
-            if path in stats_by_path:
-                insertions = stats_by_path[path]["insertions"]
-                deletions = stats_by_path[path]["deletions"]
-
-            file_changes.append(
-                FileChange(
-                    status=status,
-                    path=path,
-                    old_path=old_path,
-                    insertions=insertions,
-                    deletions=deletions,
-                )
+    for line in lines:
+        status, *files = line.split()
+        changes.append(
+            FileChange(
+                status=status,
+                path=files[-1],
+                old_path=None,
+                insertions=-1,
+                deletions=-1,
             )
-        else:  # Handle A, M, D
-            status = status_code
-            path = parts[1]
-            if path in stats_by_path:
-                insertions = stats_by_path[path]["insertions"]
-                deletions = stats_by_path[path]["deletions"]
+        )
+        if status.startswith("R"):
+            changes[-1].old_path = files[0]
 
-            file_changes.append(
-                FileChange(
-                    status=status, path=path, insertions=insertions, deletions=deletions
-                )
-            )
+    return RawMilestone(
+        start_commit_hash=start_hash,
+        end_commit_hash=end_hash,
+        messages=[],
+        changes=changes,
+        _repo_path=repo_path,
+    )

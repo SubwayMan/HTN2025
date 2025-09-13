@@ -1,5 +1,4 @@
-from fetcher import *
-
+from fetcher import DataFetcher
 import os
 import shutil
 from milestones import get_milestone_data
@@ -36,4 +35,6 @@ commits = [first_commit] + commits
 if last_commit.hash != commits[-1].hash:
     commits.append(last_commit)
 
-print(get_milestone_data(commits[0], commits[1]))
+milestone = get_milestone_data(commits[1], commits[2])
+for dc in milestone.changes:
+    print(dc)
