@@ -40,3 +40,12 @@ for dc in milestone.changes:
     print(dc)
 for message in milestone.messages:
     print(message)
+
+paths = [a.path for a in milestone.changes]
+while True:
+    command, *args = input().split()
+    if command == "list":
+        print(paths)
+    elif command == "diff":
+        filename = args[0]
+        print(milestone.get_diff_for_file(filename))

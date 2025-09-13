@@ -8,6 +8,10 @@ from gitmodels import Commit, FileChange
 shortened_rename_regex = re.compile(r"\{.+\s=>\s(.+)\}(.*)$")
 
 
+class DiffFileNotFound(Exception):
+    pass
+
+
 @dataclass
 class RawMilestone:
     """
@@ -23,28 +27,28 @@ class RawMilestone:
     changes: List[FileChange]
     _repo_path: str  # Store repo path for internal use
 
-    def get_diff_for_file(self, file_path: str) -> Optional[str]:
+    def get_diff_for_file(self, filechange: str) -> Optional[str]:
         """Fetches the detailed, line-by-line diff for a specific file."""
-        # Ensure the requested file is part of this milestone's changes
-        if not any(fc.path == file_path for fc in self.changes):
-            return None
-
-        command = [
+        diff_command = [
             "git",
+            "--no-pager",
             "diff",
-            self.start_commit_hash,
-            self.end_commit_hash,
+            f"{self.start_commit_hash}..{self.end_commit_hash}",
             "--",
-            file_path,  # '--' disambiguates path from branch names
+            filechange,
         ]
-        try:
-            result = sp.run(
-                command, cwd=self._repo_path, capture_output=True, text=True, check=True
+        result = sp.run(
+            diff_command,
+            cwd=self._repo_path,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if filechange not in [a.path for a in self.changes]:
+            raise DiffFileNotFound(
+                f"Couldn't calculate diff for file {filechange}. Does it exist?"
             )
-            return result.stdout
-        except sp.CalledProcessError as e:
-            print(f"Error getting diff for {file_path}: {e.stderr}")
-            return None
+        return result.stdout
 
 
 def generate_milestones(commits: List[Commit]) -> Generator[RawMilestone]:
