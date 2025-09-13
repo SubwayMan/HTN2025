@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 import subprocess as sp
+import re
 from typing import Generator, List, Optional
 from gitmodels import Commit, FileChange
+
+
+shortened_rename_regex = re.compile(r"\{.+\s=>\s(.+)\}(.*)$")
 
 
 @dataclass
@@ -51,6 +55,29 @@ def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:
     """Runs git diff and parses the output to create a Milestone object."""
     start_hash = c1.hash
     end_hash = c2.hash
+    repo_path = c1.repository
+
+    numstat_command = [
+        "git",
+        "--no-pager",
+        "diff",
+        "--numstat",
+        f"{start_hash}..{end_hash}",
+    ]
+    print(" ".join(numstat_command))
+
+    result = sp.run(
+        numstat_command, cwd=repo_path, capture_output=True, text=True, check=True
+    )
+    file_to_stats = {}  # dict to tuple of (insertions, deletions)
+
+    for line in result.stdout.strip().split("\n"):
+        if re.search(shortened_rename_regex, line):
+            line = shortened_rename_regex.sub(r"\1\2", line)
+        insertions, deletions, *extras = line.split()
+        filename = extras[-1]
+        file_to_stats[filename] = (int(insertions), int(deletions))
+
     command = [
         "git",
         "--no-pager",
@@ -59,7 +86,6 @@ def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:
         f"{start_hash}..{end_hash}",
     ]
     print(" ".join(command))
-    repo_path = c1.repository
     # TODO: handle failure
     result = sp.run(command, cwd=repo_path, capture_output=True, text=True, check=True)
 
@@ -71,10 +97,11 @@ def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:
 
     for line in lines:
         status, *files = line.split()
+        filename = files[-1]
         changes.append(
             FileChange(
                 status=status,
-                path=files[-1],
+                path=filename,
                 old_path=None,
                 insertions=-1,
                 deletions=-1,
@@ -82,6 +109,23 @@ def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:
         )
         if status.startswith("R"):
             changes[-1].old_path = files[0]
+        if file_to_stats.get(filename) is not None:
+            ins, dels = file_to_stats.get(filename)
+            changes[-1].insertions = ins
+            changes[-1].deletions = dels
+
+    numstat_command = [
+        "git",
+        "--no-pager",
+        "diff",
+        "--numstat",
+        f"{start_hash}..{end_hash}",
+    ]
+    print(" ".join(numstat_command))
+
+    result = sp.run(
+        numstat_command, cwd=repo_path, capture_output=True, text=True, check=True
+    )
 
     return RawMilestone(
         start_commit_hash=start_hash,
