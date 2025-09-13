@@ -1,3 +1,8 @@
+from dataclasses import dataclass
+from typing import List
+
+
+@dataclass
 class Commit:
     """
     class to encode a singular git commit.
@@ -5,9 +10,30 @@ class Commit:
     - hash
     - date/time of creation
     - message
-    - files changed
-    - committer
     """
 
-    def __init__(self) -> None:
-        pass
+    hash: str
+    parent_hashes: List[str]
+    author_name: str
+    author_date_unix: int
+    committer_date_unix: int
+    subject: str
+
+
+@dataclass
+class FileRename:
+    """
+    class to represent the action of renaming a file in git.
+    """
+
+
+@dataclass
+class FileDiff:
+    """
+    Class that contains top-level file diff info and can be used to fetch more information.
+    """
+
+    filename: str
+    insertions: int
+    deletions: int
+    renames: List[FileRename]

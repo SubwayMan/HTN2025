@@ -2,7 +2,8 @@ class RawMilestone:
     """
     Class to represent a raw, unprocessed milestone.
     Fields:
-    - list of Commit objects
+    - Squashed commit messages (string)
+    - Files changed & amount of insertions/deletions (list of FileDiff)
     """
 
     def __init__(self) -> None:
