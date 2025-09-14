@@ -98,7 +98,7 @@ class MilestoneSummary(BaseModel):
 
 
 class MilestoneProcessor():
-    def __init__(self, milestones: List[RawMilestone]):
+    def __init__(self):
         # set_default_openai_key(os.environ["OPENAI_API_KEY"])
         # cohere_api_key = os.environ["COHERE_API_KEY"]
         # cerebras_api_key = os.environ["CEREBRAS_API_KEY"]
@@ -106,7 +106,6 @@ class MilestoneProcessor():
 
         self.prev_summary = None
         self.prev_prev_summary = None
-        self.milestones = milestones
 
         with open(os.path.join(os.path.dirname(__file__), "prompt.txt"), "r") as f:
             prompt = f.read()
@@ -128,6 +127,19 @@ class MilestoneProcessor():
             model=LitellmModel(model="anthropic/claude-3-7-sonnet-20250219", api_key=os.environ["ANTHROPIC_API_KEY"])
         )
 
+    async def process_milestone(self, milestone: RawMilestone):
+        result = Runner.run_streamed(
+            self.overview_agent,
+            "analyze the current milestone",
+            context=milestone,
+            max_turns=30
+        )
+
+        async for event in result.stream_events():
+            self.print_event(event)
+        
+        print("Here's final result: ", result) # todo other stuff with result
+
     def print_event(self, event):
         # Ignore raw responses event
         if event.type == "raw_response_event":
@@ -147,19 +159,6 @@ class MilestoneProcessor():
                     print(f"-- Tool output: {event.item.output}")
             elif event.item.type == "message_output_item":
                 print(f"-- Message output:\n {ItemHelpers.text_message_output(event.item)}")
-    
-    async def process_all_milestones(self):
-        for milestone in self.milestones:
-            result = Runner.run_streamed(
-                self.overview_agent,
-                "analyze the current milestone",
-                context=milestone,
-                max_turns=30
-            )
-
-            async for event in result.stream_events():
-                self.print_event(event)
-            
-            print("Here's final result: ", result) # todo other stuff with result
-
+            else:
+                pass
 
