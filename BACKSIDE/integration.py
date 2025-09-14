@@ -4,55 +4,17 @@ import dataclasses
 from typing import Optional, List, Tuple
 from .fetcher import DataFetcher
 from .milestones import generate_milestones
+from .processor import MilestoneProcessor
+
+processor = MilestoneProcessor()
 
 
-class PipelineState:
-    """
-    Per-pipeline append-only log with async notification.
-    - events: list of (id_str, jsonable_dict)
-    - cond: notifies waiters when a new event arrives or pipeline ends
-    """
+def encode_payload(data: dict) -> str:
+    return f"data: {json.dumps(data)}"
 
-    def __init__(self):
-        self.events: List[Tuple[str, dict]] = []
-        self.done: bool = False
-        self.error: Optional[str] = None
-        self._next_seq: int = 1
-        self._lock = asyncio.Lock()
-        self._cond = asyncio.Condition()
 
-    async def append(self, event: dict) -> str:
-        async with self._lock:
-            eid = str(self._next_seq)
-            self._next_seq += 1
-            self.events.append((eid, event))
-        # notify outside the lock
-        async with self._cond:
-            self._cond.notify_all()
-        return eid
-
-    async def set_done(self):
-        self.done = True
-        async with self._cond:
-            self._cond.notify_all()
-
-    async def set_error(self, msg: str):
-        self.error = msg
-        self.done = True
-        async with self._cond:
-            self._cond.notify_all()
-
-    def index_from_last_event_id(self, last_id: Optional[str]) -> int:
-        """Map Last-Event-ID (string seq) to start index in events."""
-        if not last_id:
-            return 0
-        try:
-            seq = int(last_id)
-        except ValueError:
-            return 0
-        # events are 1-based ids; list is 0-based
-        # next unread index is seq (since last delivered was seq)
-        return max(0, min(len(self.events), seq))
+def decode_payload(data: str) -> dict:
+    return json.loads(data[6:])
 
 
 class Pipeline:
@@ -61,7 +23,7 @@ class Pipeline:
         self.PIDToRepo = {}
 
     def add_process(self, pid):
-        self.PIPELINES[pid] = PipelineState()
+        self.PIPELINES[pid] = asyncio.Queue()
 
     def get_process(self, pid):
         return self.PIPELINES.get(pid)
@@ -82,15 +44,27 @@ class Pipeline:
                 commits.append(last_commit)
 
             async for milestone in generate_milestones(commits):
-                await p.append(
-                    {"type": "milestone", "payload": {"messages": milestone.messages}}
+                await p.put(
+                    encode_payload(
+                        {
+                            "type": "milestone",
+                            "payload": {"messages": milestone.messages},
+                        }
+                    )
                 )
 
-            await p.set_done()
-            await p.append({"type": "end", "payload": {"status": "done"}})
+            await p.put(encode_payload({"type": "end", "payload": {"status": "done"}}))
         except Exception as e:
-            await p.append({"type": "error", "payload": {"msg": str(e)}})
-            await p.set_error(str(e))
-            await p.append(
-                {"type": "end", "payload": {"status": "error", "error": str(e)}}
+            await p.put(encode_payload({"type": "error", "payload": {"msg": str(e)}}))
+            await p.put(
+                encode_payload(
+                    {"type": "end", "payload": {"status": "error", "error": str(e)}}
+                )
             )
+
+    async def get_stream(self, pid: str):
+        while True:
+            event = await self.PIPELINES[pid].get()
+            yield event
+            if decode_payload(event).get("type") == "end":
+                break

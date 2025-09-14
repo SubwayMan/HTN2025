@@ -13,4 +13,5 @@ dependencies = [
     "openai-agents[litellm]>=0.3.0",
     "redis>=6.4.0",
     "uvicorn>=0.35.0",
+    "python-dotenv>=1.1.1",
 ]
