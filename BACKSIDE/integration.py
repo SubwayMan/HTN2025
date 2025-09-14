@@ -7,6 +7,8 @@ from typing import Optional, List, Tuple
 from .fetcher import DataFetcher
 from .milestones import generate_milestones, generate_milestones_with_heuristic
 from .processor import MilestoneProcessor
+import os
+import cohere
 
 
 def encode_payload(data: dict) -> str:
@@ -41,15 +43,61 @@ class Pipeline:
         self.PIPELINES = {}
         self.PIDToRepo = {}
         self.processors = {}  # Store processor instances per pipeline ID
+        self.all_summaries = {}  # Store all summaries by pipeline ID
 
     def add_process(self, pid):
         self.PIPELINES[pid] = asyncio.Queue()
         self.processors[pid] = (
             MilestoneProcessor()
         )  # Create new processor for each analysis
+        self.all_summaries[pid] = []  # Initialize summary list for this pipeline
 
     def get_process(self, pid):
         return self.PIPELINES.get(pid)
+
+    def get_all_summaries(self, pid):
+        """Get all summaries for a specific pipeline ID"""
+        return self.all_summaries.get(pid, [])
+
+    async def process_summaries_with_service(self, pid, service_func):
+        """Process all summaries for a pipeline with a service function and return result"""
+        summaries = self.get_all_summaries(pid)
+        if not summaries:
+            return None
+
+        # Call the service function with all summaries
+        try:
+            result = await service_func(summaries)
+            return result
+        except Exception as e:
+            print(f"Error processing summaries with service: {e}")
+            return None
+
+    async def cohere_summary_service(self, summaries):
+        """Example service function - replace with your actual service integration"""
+        co = cohere.ClientV2(api_key=os.getenv("COHERE_API_KEY"))
+
+        response = co.chat(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are given a list of summaries, each summary is for a section of a github project. Your job is to look across all these summaries and give a one-paragraph overview of the project. Touch upon purpose, technologies, type of project (long, hackathon, enterprise/personal) etc."
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "HERE ARE THE SUMMARIES: " + "\n\n".join(str(s) for s in summaries)
+                        }
+                    ]
+                }
+            ],
+            temperature=0.3,
+            model="command-a-03-2025",
+        )
+
+        return response
 
     async def run_pipeline(self, pid: str, repo: str):
         p = self.PIPELINES[pid]
@@ -75,15 +123,15 @@ class Pipeline:
             # if last_commit.hash != commits[-1].hash:
             # commits.append(last_commit)
 
-            limit = 10
+            limit = 3
             a = 0
 
             async for milestone in generate_milestones_with_heuristic(
                 4000.0, df, repopath
             ):
-                # a += 1
-                # if a >= limit:
-                # break
+                a += 1
+                if a >= limit:
+                    break
                 # Send milestone info
                 await p.put(
                     encode_payload(
@@ -126,6 +174,10 @@ class Pipeline:
                                 )
 
                     result = await processor.process_milestone(milestone, stream_event)
+
+                    # Save summary to centralized list
+                    self.all_summaries[pid].append(result)
+
                     await p.put(
                         encode_payload(
                             {"type": "milestone_analysis", "payload": result}
@@ -138,7 +190,31 @@ class Pipeline:
                         )
                     )
                 print("Processed milestone")
-            print("Finished")
+            print("Finished processing milestones")
+            print(f"Total summaries collected: {len(self.all_summaries.get(pid, []))}")
+
+            # Process all summaries with service after all milestones are complete
+            try:
+                final_result = await self.process_summaries_with_service(
+                    pid, self.cohere_summary_service
+                )
+                if final_result:
+                    # Extract text from Cohere response
+                    summary_text = final_result.message.content[0].text
+                    print(f"Generated final summary: {summary_text[:100]}...")
+                    await p.put(
+                        encode_payload(
+                            {"type": "final_summary", "payload": {"text": summary_text}}
+                        )
+                    )
+                else:
+                    print("No final result from Cohere service")
+            except Exception as e:
+                await p.put(
+                    encode_payload(
+                        {"type": "service_error", "payload": {"error": str(e)}}
+                    )
+                )
 
             await p.put(encode_payload({"type": "end", "payload": {"status": "done"}}))
         except Exception as e:
@@ -149,9 +225,11 @@ class Pipeline:
                 )
             )
         finally:
-            # Clean up processor after pipeline completes
+            # Clean up processor and summaries after pipeline completes
             if pid in self.processors:
                 del self.processors[pid]
+            if pid in self.all_summaries:
+                del self.all_summaries[pid]
 
     async def get_stream(self, pid: str):
         while True:

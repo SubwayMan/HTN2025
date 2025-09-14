@@ -16,6 +16,7 @@ export default function Analysis() {
   const [isComplete, setIsComplete] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [repoName, setRepoName] = useState<string>('');
+  const [finalSummary, setFinalSummary] = useState<string>('');
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
@@ -85,6 +86,16 @@ export default function Analysis() {
           });
         }
 
+        // Check for final_summary event
+        if (event.type === 'final_summary' && event.payload) {
+          console.log('Final summary received:', event.payload);
+          // Extract the text from Cohere response
+          const summaryText = event.payload.message?.content?.[0]?.text ||
+                             event.payload.text ||
+                             'Project summary generated successfully.';
+          setFinalSummary(summaryText);
+        }
+
         // Check for end event
         if (event.type === 'end') {
           console.log('Analysis complete:', event.payload);
@@ -149,14 +160,22 @@ export default function Analysis() {
 
       <main className={styles.main}>
         {milestones.length > 0 ? (
-          <Timeline milestones={milestones} theme={theme} />
+          <>
+            {finalSummary && (
+              <div className={styles.resultsContainer}>
+                <h2 className={styles.resultsTitle}>Project Overview</h2>
+                <p className={styles.resultsText}>{finalSummary}</p>
+              </div>
+            )}
+            <Timeline milestones={milestones} theme={theme} />
+          </>
         ) : (
           <div className={styles.resultsContainer}>
             <h2 className={styles.resultsTitle}>
               {isComplete ? 'No milestones found' : 'Analyzing repository...'}
             </h2>
             <p className={styles.resultsText}>
-              {isComplete ? 'The analysis completed but no milestones were generated.' : 'Processing commit history and generating milestone summaries...'}
+              {finalSummary || (isComplete ? 'The analysis completed but no milestones were generated.' : 'Processing commit history and generating milestone summaries...')}
             </p>
             {!isComplete && (
               <div className={styles.loadingIndicator}>
