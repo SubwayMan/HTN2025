@@ -1,11 +1,15 @@
 from ast import arguments
-from agents import Agent, function_tool, Runner, RunContextWrapper, ItemHelpers, set_default_openai_key
+from agents import Agent, function_tool, Runner, RunContextWrapper, ItemHelpers, set_default_openai_key, ModelSettings
 from agents.extensions.models.litellm_model import LitellmModel
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+from json import dumps, loads
 import os
 from pydantic import BaseModel
 from statistics import median
 from typing import Iterable, List
+
+load_dotenv()
 
 from .milestones import RawMilestone
 from .gitmodels import FileChange
@@ -88,21 +92,16 @@ def get_file_diff(wrapper: RunContextWrapper[RawMilestone], file_path: str):
     except Exception as exc:
         return f"ERROR getting diff: {exc}"
 
-
 class MilestoneSummary(BaseModel):
-    is_final: bool
-    status_update: str
     title: str
     summary: str
     most_important_changes: List[str]
-
 
 class MilestoneProcessor():
     def __init__(self):
         # set_default_openai_key(os.environ["OPENAI_API_KEY"])
         # cohere_api_key = os.environ["COHERE_API_KEY"]
         # cerebras_api_key = os.environ["CEREBRAS_API_KEY"]
-
 
         self.prev_summary = None
         self.prev_prev_summary = None
@@ -123,14 +122,24 @@ class MilestoneProcessor():
                 get_top_n_file_changes,
                 get_file_changes_by_status
             ],
-            output_type=MilestoneSummary,
-            model=LitellmModel(model="anthropic/claude-3-7-sonnet-20250219", api_key=os.environ["ANTHROPIC_API_KEY"])
+            # output_type=MilestoneSummary,
+            # model=LitellmModel(model="anthropic/claude-3-7-sonnet-20250219", api_key=os.environ["ANTHROPIC_API_KEY"])
+            model=LitellmModel(
+                model="cerebras/qwen-3-235b-a22b-instruct-2507",
+                api_key=os.environ["CEREBRAS_API_KEY"]
+            )
         )
 
     async def process_milestone(self, milestone: RawMilestone):
+        prompt = "you're hallucinating a tool call.analyze the current milestone"
+        if self.prev_summary is not None:
+            prompt += f", this is the previous summary: {self.prev_summary}"
+        if self.prev_prev_summary is not None:
+            prompt += f", this is the previous previous summary: {self.prev_prev_summary}"
+
         result = Runner.run_streamed(
             self.overview_agent,
-            "analyze the current milestone",
+            prompt,
             context=milestone,
             max_turns=30
         )
@@ -138,7 +147,16 @@ class MilestoneProcessor():
         async for event in result.stream_events():
             self.print_event(event)
         
-        print("Here's final result: ", result) # todo other stuff with result
+        # print("Here's final result: ", result)
+
+        result_dict = loads(result.final_output)
+        if self.prev_summary is not None:
+            self.prev_prev_summary = self.prev_summary
+        self.prev_summary = result_dict["summary"]
+
+        print(result_dict)
+        return result_dict
+
 
     def print_event(self, event):
         # Ignore raw responses event
@@ -149,16 +167,19 @@ class MilestoneProcessor():
             return
         elif event.type == "run_item_stream_event":
             if event.item.type == "tool_call_item":
-                print("-- Tool was called")
+                pass#print("-- Tool was called")
             elif event.item.type == "tool_call_output_item":
                 if isinstance(event.item.output, str):
-                    print(f"-- Tool output: {event.item.output[:500]}")
+                    pass#print(f"-- Tool output: {event.item.output[:500]}")
+                elif isinstance(event.item.output, dict):
+                    pass#print(f"-- Tool output: {str(event.item.output)[:500]}")
                 elif isinstance(event.item.output, Iterable):
-                    print(f"-- Tool output: {event.item.output[:10]}")
+                    # For other iterables like lists, convert to string first
+                    pass#print(f"-- Tool output: {str(list(event.item.output)[:10])}")
                 else:
-                    print(f"-- Tool output: {event.item.output}")
+                    pass#print(f"-- Tool output: {event.item.output}")
             elif event.item.type == "message_output_item":
-                print(f"-- Message output:\n {ItemHelpers.text_message_output(event.item)}")
+                pass#print(f"-- Message output:\n {ItemHelpers.text_message_output(event.item)}")
             else:
                 pass
 

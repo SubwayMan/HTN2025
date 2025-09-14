@@ -92,11 +92,13 @@ for i, milestone in enumerate(milestones):
     print("Milestone end:")
     print_unix_timestamp(milestone.time_end)
 
-# async def main():
-#     processor = MilestoneProcessor(milestones)
-#     await processor.process_all_milestones()
+async def main():
+    processor = MilestoneProcessor()
 
-# asyncio.run(main())
+    for m in milestones[:5]:
+        await processor.process_milestone(m)
+
+asyncio.run(main())
 
 
 # paths = [a.path for a in milestone.changes]
