@@ -129,9 +129,9 @@ class Pipeline:
             async for milestone in generate_milestones_with_heuristic(
                 4000.0, df, repopath
             ):
-                a += 1
-                if a >= limit:
-                    break
+                # a += 1
+                # if a >= limit:
+                #     break
                 # Send milestone info
                 await p.put(
                     encode_payload(
