@@ -1,7 +1,7 @@
-from fetcher import DataFetcher
+from BACKSIDE.fetcher import DataFetcher
 import os
 import shutil
-from milestones import get_milestone_data
+from BACKSIDE.milestones import get_milestone_data
 from datetime import datetime
 
 
@@ -35,9 +35,9 @@ def print_unix_timestamp(timestamp):
 
 testrepo = "patrick-gu/toot"
 d = DataFetcher()
-empty_directory("../workspace")
-repo = d.fetch_github_repository(testrepo, "../workspace")
-commits = d.get_commit_log(repo)[::-1]
+empty_directory("./workspace")
+repo = d.fetch_github_repository(testrepo, "./workspace")
+commits = d.get_commit_log(repo)
 first_commit = d.get_boundary_commit(repo)
 last_commit = d.get_boundary_commit(repo, False)
 commits = [first_commit] + commits

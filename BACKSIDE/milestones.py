@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 import subprocess as sp
 import re
-from typing import Generator, List, Optional
-from gitmodels import Commit, FileChange
+import asyncio
+from typing import AsyncGenerator, Generator, List, Optional
+from .gitmodels import Commit, FileChange
 
 
 shortened_rename_regex = re.compile(r"\{.+\s=>\s(.+)\}(.*)$")
@@ -53,10 +54,11 @@ class RawMilestone:
         return result.stdout
 
 
-def generate_milestones(commits: List[Commit]) -> Generator[RawMilestone]:
+async def generate_milestones(commits: List[Commit]) -> AsyncGenerator[RawMilestone]:
     n = len(commits)
     for i in range(1, n):
         yield get_milestone_data(commits[i - 1], commits[i])
+        await asyncio.sleep(0)
 
 
 def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:

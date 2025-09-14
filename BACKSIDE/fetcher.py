@@ -2,7 +2,7 @@ import subprocess as sp
 import string
 import random
 import os
-from gitmodels import Commit
+from .gitmodels import Commit
 from typing import Optional
 
 default_cloning_depth = 310
@@ -89,6 +89,7 @@ class DataFetcher:
             "--merges",
             "--date=unix",
             f'--pretty=format:"{format_string}"',
+            "--reverse",
         ]
 
         result = None
