@@ -3,6 +3,8 @@ import subprocess as sp
 import re
 import asyncio
 from typing import AsyncGenerator, Generator, List, Optional
+
+from BACKSIDE.fetcher import DataFetcher
 from .gitmodels import Commit, FileChange
 
 
@@ -59,6 +61,32 @@ async def generate_milestones(commits: List[Commit]) -> AsyncGenerator[RawMilest
     for i in range(1, n):
         yield get_milestone_data(commits[i - 1], commits[i])
         await asyncio.sleep(0)
+
+
+async def generate_milestones_with_heuristic(
+    target_milestones: int, df: DataFetcher, repo_path: str
+):
+    c_commit = df.get_boundary_commit(repo_path)
+    last_commit = df.get_boundary_commit(repo_path, False)
+    threshold = df.getScore(c_commit, last_commit, repo_path) / target_milestones
+    print(threshold)
+    while True:
+        try:
+            d_commit = df.get_next_commit_with_score_threshold(
+                repo_path, c_commit, threshold
+            )
+            if c_commit.hash == d_commit.hash:
+                yield get_milestone_data(c_commit, last_commit)
+                break
+            yield get_milestone_data(c_commit, d_commit)
+            await asyncio.sleep(0)
+            c_commit = d_commit
+        except sp.CalledProcessError:
+            print("Terminating bisect.")
+            sp.run(["git", "bisect", "reset"], cwd=repo_path)
+            if last_commit.hash != c_commit.hash:
+                yield get_milestone_data(c_commit, last_commit)
+            break
 
 
 def get_milestone_data(c1: Commit, c2: Commit) -> RawMilestone:

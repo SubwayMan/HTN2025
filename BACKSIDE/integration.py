@@ -42,7 +42,7 @@ class Pipeline:
             repopath = self.PIDToRepo[pid] = df.fetch_github_repository(
                 repo, "./workspace", use_https=True
             )
-            commits = df.get_commit_log(repopath)
+            commits = df.get_merge_commit_log(repopath)
 
             first_commit = df.get_boundary_commit(repopath)
             last_commit = df.get_boundary_commit(repopath, False)

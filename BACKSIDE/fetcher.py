@@ -2,6 +2,7 @@ import subprocess as sp
 import string
 import random
 import os
+from sys import stdout
 from .gitmodels import Commit
 from typing import Optional
 
@@ -37,7 +38,11 @@ class DataFetcher:
     """
 
     def fetch_github_repository(
-        self, repo: str, workspace_path: str, depth: int = default_cloning_depth, use_https: bool = False
+        self,
+        repo: str,
+        workspace_path: str,
+        depth: int = default_cloning_depth,
+        use_https: bool = False,
     ):
         """
         Clones a github repository into a workspace folder.
@@ -82,7 +87,7 @@ class DataFetcher:
         except sp.CalledProcessError:
             raise RepoNotFoundException(f"Failed to find repository {repo}.")
 
-    def get_commit_log(self, repository: str):
+    def get_merge_commit_log(self, repository: str):
         format_string = "%x1e%H%x1f%P%x1f%an%x1f%at%x1f%ct%x1f%s"
         git_cmd = [
             "git",
@@ -204,3 +209,79 @@ class DataFetcher:
             raise FailedGitLogException(
                 f"Failed to execute following command:\n{' '.join(command)}\nin folder {repository}\n\nstdout:\n{e.stdout}\n\nstderr:{e.stderr}"
             )
+
+    def getScore(self, c1: Commit, c2: Commit, repository: str):
+        command = ["../../scoregen.py", c1.hash, c2.hash]
+        print(" ".join(command))
+        try:
+            result = sp.run(
+                command, cwd=repository, capture_output=True, text=True, check=True
+            )
+        except sp.CalledProcessError as e:
+            print("Encountered exception when calculating score:", e.stdout, e.stderr)
+
+        ret = float(result.stdout)
+        return ret
+
+    def get_next_commit_with_score_threshold(
+        self, repository: str, start_commit: Commit, threshold: float
+    ) -> Commit:
+        """Get the next commit such that the score heuristic exceeds some threshold."""
+        bisect_start_command = [
+            "git",
+            "bisect",
+            "start",
+            "--first-parent",
+            "HEAD",
+            start_commit.hash,
+        ]
+
+        bisect_run_command = [
+            "git",
+            "bisect",
+            "run",
+            "../../scoregen.py",
+            start_commit.hash,
+            "HEAD",
+            "--limit",
+            str(threshold),
+        ]
+        sp.run(
+            bisect_start_command,
+            cwd=repository,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        sp.run(
+            bisect_run_command,
+            cwd=repository,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        format_string = "%H%x00%P%x00%an%x00%at%x00%ct%x00%s"
+
+        cmd = ["git", "log", "-n", "1", "HEAD", f"--format={format_string}"]
+
+        output = sp.check_output(cmd, cwd=repository, text=True).strip()
+
+        parts = output.split("\x00")
+
+        commit = Commit(
+            hash=parts[0],
+            parent_hashes=parts[1].split(),  # Parent hashes are space-separated
+            author_name=parts[2],
+            author_date_unix=int(parts[3]),
+            committer_date_unix=int(parts[4]),
+            subject=parts[5],
+            repository=repository,
+        )
+        sp.run(
+            ["git", "bisect", "reset"],
+            cwd=repository,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return commit
