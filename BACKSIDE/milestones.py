@@ -64,11 +64,10 @@ async def generate_milestones(commits: List[Commit]) -> AsyncGenerator[RawMilest
 
 
 async def generate_milestones_with_heuristic(
-    target_milestones: int, df: DataFetcher, repo_path: str
+    threshold: float, df: DataFetcher, repo_path: str
 ):
     c_commit = df.get_boundary_commit(repo_path)
     last_commit = df.get_boundary_commit(repo_path, False)
-    threshold = df.getScore(c_commit, last_commit, repo_path) / target_milestones
     print(threshold)
     while True:
         try:
