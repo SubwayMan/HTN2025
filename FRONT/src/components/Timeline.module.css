@@ -289,3 +289,19 @@
     left: 100%;
   }
 }
+
+.inlineCode {
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875em;
+  border: 1px solid #e2e8f0;
+}
+
+.timeline.dark .inlineCode {
+  background: #0f172a;
+  color: #f1f5f9;
+  border-color: #334155;
+}

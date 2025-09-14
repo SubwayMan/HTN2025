@@ -15,6 +15,26 @@ interface TimelineProps {
   theme?: 'light' | 'dark';
 }
 
+const renderSummaryWithCodeBlocks = (text: string) => {
+  // Split text by backticks, keeping the delimiters
+  const parts = text.split(/(`[^`]+`)/);
+
+  return parts.map((part, index) => {
+    // Check if this part is surrounded by backticks
+    if (part.startsWith('`') && part.endsWith('`')) {
+      // Remove the backticks and render as code
+      const codeText = part.slice(1, -1);
+      return (
+        <code key={index} className={styles.inlineCode}>
+          {codeText}
+        </code>
+      );
+    }
+    // Regular text
+    return part;
+  });
+};
+
 export default function Timeline({ milestones, theme = 'light' }: TimelineProps) {
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
 
@@ -49,7 +69,9 @@ export default function Timeline({ milestones, theme = 'light' }: TimelineProps)
 
           <div className={`${styles.timelineCard} ${isLoading(milestone) ? styles.loadingCard : ''}`}>
             <h3 className={styles.cardTitle}>{milestone.title}</h3>
-            <p className={styles.cardSummary}>{milestone.summary}</p>
+            <div className={styles.cardSummary}>
+              {renderSummaryWithCodeBlocks(milestone.summary)}
+            </div>
 
             {milestone.files.length > 0 && (
               <div className={styles.filesSection}>
