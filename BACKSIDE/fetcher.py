@@ -37,13 +37,14 @@ class DataFetcher:
     """
 
     def fetch_github_repository(
-        self, repo: str, workspace_path: str, depth: int = default_cloning_depth
+        self, repo: str, workspace_path: str, depth: int = default_cloning_depth, use_https: bool = False
     ):
         """
         Clones a github repository into a workspace folder.
         repo: username/project example: 'SubwayMan/htn2025'
         workspace_path: the folder in which the project will be cloned.
         depth: cloning depth.
+        use_https: if True, use HTTPS for cloning; otherwise use SSH (default).
         returns: file path to cloned folder.
         """
         slug = generate_slug()
@@ -51,8 +52,10 @@ class DataFetcher:
         while os.path.exists(path):
             slug = generate_slug()
             path = os.path.join(workspace_path, slug)
-
-        url = f"git@github.com:{repo}.git"
+        if use_https:
+            url = f"https://github.com/{repo}.git"
+        else:
+            url = f"git@github.com:{repo}.git"
         command = [
             "git",
             "clone",

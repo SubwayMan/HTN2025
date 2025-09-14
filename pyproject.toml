@@ -8,6 +8,9 @@ dependencies = [
     "fastapi>=0.116.1",
     "flask-sse>=1.0.0",
     "python-multipart>=0.0.20",
+    "asyncio>=4.0.0",
+    "flask>=3.1.2",
+    "openai-agents[litellm]>=0.3.0",
     "redis>=6.4.0",
     "uvicorn>=0.35.0",
 ]

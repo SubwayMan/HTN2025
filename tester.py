@@ -1,8 +1,11 @@
-from BACKSIDE.fetcher import DataFetcher
+import asyncio
+from datetime import datetime
 import os
 import shutil
+
+from BACKSIDE.fetcher import DataFetcher
 from BACKSIDE.milestones import get_milestone_data
-from datetime import datetime
+from BACKSIDE.processor import MilestoneProcessor
 
 
 def empty_directory(directory_path):
@@ -36,7 +39,7 @@ def print_unix_timestamp(timestamp):
 testrepo = "patrick-gu/toot"
 d = DataFetcher()
 empty_directory("./workspace")
-repo = d.fetch_github_repository(testrepo, "./workspace")
+repo = d.fetch_github_repository(testrepo, "./workspace", use_https=True)
 commits = d.get_commit_log(repo)
 first_commit = d.get_boundary_commit(repo)
 last_commit = d.get_boundary_commit(repo, False)
@@ -44,7 +47,7 @@ commits = [first_commit] + commits
 if last_commit.hash != commits[-1].hash:
     commits.append(last_commit)
 
-milestone = get_milestone_data(commits[1], commits[2])
+milestone = get_milestone_data(commits[5], commits[10])
 for dc in milestone.changes:
     print(dc)
 for message in milestone.messages:
@@ -55,12 +58,20 @@ print_unix_timestamp(milestone.time_start)
 print("Milestone end:")
 print_unix_timestamp(milestone.time_end)
 
+async def main():
+    processor = MilestoneProcessor([milestone])
+    await processor.process_all_milestones()
 
-paths = [a.path for a in milestone.changes]
-while True:
-    command, *args = input().split()
-    if command == "list":
-        print(paths)
-    elif command == "diff":
-        filename = args[0]
-        print(milestone.get_diff_for_file(filename))
+asyncio.run(main())
+
+
+# paths = [a.path for a in milestone.changes]
+# while True:
+#     command, *args = input().split()
+#     if command == "list":
+#         print(paths)
+#     elif command == "diff":
+#         filename = args[0]
+#         print(milestone.get_diff_for_file(filename))
+
+
