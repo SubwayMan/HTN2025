@@ -4,6 +4,7 @@ from agents.extensions.models.litellm_model import LitellmModel
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from json import dumps, loads
+import asyncio
 import os
 from pydantic import BaseModel
 from statistics import median
@@ -13,6 +14,9 @@ load_dotenv()
 
 from .milestones import RawMilestone
 from .gitmodels import FileChange
+
+# import litellm
+# litellm._turn_on_debug()
 
 
 @function_tool
@@ -105,6 +109,7 @@ class MilestoneProcessor():
 
         self.prev_summary = None
         self.prev_prev_summary = None
+        self.current_task = None  # Store current asyncio task for cancellation
 
         with open(os.path.join(os.path.dirname(__file__), "prompt.txt"), "r") as f:
             prompt = f.read()
@@ -131,6 +136,7 @@ class MilestoneProcessor():
         )
 
     async def process_milestone(self, milestone: RawMilestone, event_callback=None):
+
         prompt = "you're hallucinating a tool call.analyze the current milestone"
         if self.prev_summary is not None:
             prompt += f", this is the previous summary: {self.prev_summary}"
@@ -170,19 +176,19 @@ class MilestoneProcessor():
             return
         elif event.type == "run_item_stream_event":
             if event.item.type == "tool_call_item":
-                pass#print("-- Tool was called")
+                print("-- Tool was called")
             elif event.item.type == "tool_call_output_item":
                 if isinstance(event.item.output, str):
-                    pass#print(f"-- Tool output: {event.item.output[:500]}")
+                    print(f"-- Tool output: {event.item.output[:500]}")
                 elif isinstance(event.item.output, dict):
-                    pass#print(f"-- Tool output: {str(event.item.output)[:500]}")
+                    print(f"-- Tool output: {str(event.item.output)[:500]}")
                 elif isinstance(event.item.output, Iterable):
                     # For other iterables like lists, convert to string first
-                    pass#print(f"-- Tool output: {str(list(event.item.output)[:10])}")
+                    print(f"-- Tool output: {str(list(event.item.output)[:10])}")
                 else:
-                    pass#print(f"-- Tool output: {event.item.output}")
+                    print(f"-- Tool output: {event.item.output}")
             elif event.item.type == "message_output_item":
-                pass#print(f"-- Message output:\n {ItemHelpers.text_message_output(event.item)}")
+                print(f"-- Message output:\n {ItemHelpers.text_message_output(event.item)}")
             else:
                 pass
 

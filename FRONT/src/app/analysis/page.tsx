@@ -1,12 +1,57 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '../../contexts/ThemeContext';
+import { AnalysisService, SSEEvent } from '../../services/api';
 import styles from './page.module.css';
 
 export default function Analysis() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { theme, toggleTheme } = useTheme();
+  const [events, setEvents] = useState<SSEEvent[]>([]);
+  const [isComplete, setIsComplete] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    const pipelineId = searchParams.get('id');
+    if (!pipelineId) {
+      console.error('No pipeline ID provided');
+      router.push('/');
+      return;
+    }
+
+    console.log('Starting SSE subscription for pipeline:', pipelineId);
+
+    // Subscribe to SSE events
+    const eventSource = AnalysisService.subscribeToAnalysis(
+      pipelineId,
+      (event) => {
+        console.log('Processing event:', event);
+        setEvents(prev => [...prev, event]);
+
+        // Check for end event
+        if (event.type === 'end') {
+          console.log('Analysis complete:', event.payload);
+          setIsComplete(true);
+          eventSource.close();
+        }
+      },
+      (error) => {
+        console.error('SSE error:', error);
+      }
+    );
+
+    eventSourceRef.current = eventSource;
+
+    // Cleanup on unmount
+    return () => {
+      console.log('Closing SSE connection');
+      eventSource.close();
+    };
+  }, [searchParams, router]);
 
   const handleNewAnalysis = () => {
     router.push('/');
@@ -17,7 +62,7 @@ export default function Analysis() {
       <nav className={styles.navbar}>
         <div className={styles.navbarContent}>
           <div className={styles.navbarInner}>
-            <div>
+            <div className={styles.titleSection}>
               <h1 className={styles.projectTitle}>
                 ProjectName Here
               </h1>
@@ -55,8 +100,12 @@ export default function Analysis() {
             Analysis Results
           </h2>
           <p className={styles.resultsText}>
-            Analysis results will be displayed here...
+            {isComplete ? 'Analysis complete!' : 'Analysis in progress...'}
           </p>
+          <p className={styles.resultsText}>
+            Events received: {events.length}
+          </p>
+          {/* Console logging is handling the actual events */}
         </div>
       </main>
     </div>

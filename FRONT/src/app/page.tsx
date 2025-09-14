@@ -3,17 +3,32 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '../contexts/ThemeContext';
+import { AnalysisService } from '../services/api';
 import styles from './page.module.css';
 
 export default function Home() {
   const [repoUrl, setRepoUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (repoUrl.trim()) {
-      router.push('/analysis');
+    if (!repoUrl.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      console.log('Starting analysis for:', repoUrl);
+      const response = await AnalysisService.beginAnalysis(repoUrl);
+      console.log('Analysis started with ID:', response.id);
+      console.log('Navigating to analysis page...');
+
+      // Navigate to analysis page with pipeline ID after successful start
+      router.push(`/analysis?id=${response.id}`);
+    } catch (error) {
+      console.error('Failed to start analysis:', error);
+      alert(`Failed to start analysis: ${error}`);
+      setIsSubmitting(false);
     }
   };
 
@@ -52,6 +67,7 @@ export default function Home() {
             <button
               type="submit"
               className={styles.submitButton}
+              disabled={isSubmitting}
             >
               <svg
                 className={styles.arrow}

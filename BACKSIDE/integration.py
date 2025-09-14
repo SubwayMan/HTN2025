@@ -9,11 +9,13 @@ from .processor import MilestoneProcessor
 
 
 def encode_payload(data: dict) -> str:
-    return f"data: {json.dumps(data)}"
+    return f"data: {json.dumps(data)}\n\n"
 
 
 def decode_payload(data: str) -> dict:
-    return json.loads(data[6:])
+    # Strip "data: " prefix and any trailing newlines
+    json_str = data.replace("data: ", "").strip()
+    return json.loads(json_str)
 
 
 class Pipeline:
@@ -113,6 +115,10 @@ class Pipeline:
     async def get_stream(self, pid: str):
         while True:
             event = await self.PIPELINES[pid].get()
-            yield event
+            # Ensure the event is properly encoded as bytes for SSE
+            if isinstance(event, str):
+                yield event.encode('utf-8')
+            else:
+                yield event
             if decode_payload(event).get("type") == "end":
                 break

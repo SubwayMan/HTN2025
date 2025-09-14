@@ -5,12 +5,22 @@ import uuid
 from typing import Dict, List, Optional, Tuple
 from fastapi import FastAPI, Form, HTTPException, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from BACKSIDE.integration import Pipeline
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = FastAPI()
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Next.js dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 pipeline = Pipeline()
 

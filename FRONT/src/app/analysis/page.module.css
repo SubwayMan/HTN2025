@@ -46,6 +46,12 @@
   height: 4rem;
 }
 
+.titleSection {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .projectTitle {
   flex-shrink: 0;
   font-size: 1.25rem;
@@ -61,6 +67,34 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.stopButton {
+  padding: 0.5rem 1rem;
+  background-color: rgb(239 68 68);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.stopButton:hover {
+  background-color: rgb(220 38 38);
+}
+
+.stopButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.container.darkMode .stopButton {
+  background-color: rgb(220 38 38);
+}
+
+.container.darkMode .stopButton:hover {
+  background-color: rgb(185 28 28);
 }
 
 .newAnalysisButton {
