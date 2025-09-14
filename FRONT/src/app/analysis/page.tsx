@@ -51,6 +51,21 @@ export default function Analysis() {
           setMilestones(prev => [...prev, placeholder]);
         }
 
+        if (event.type === 'processing_update' && event.payload) {
+          let message = event.payload.message; // message to display in milestone while it loads
+          setMilestones(prev => {
+            const updated = [...prev];
+            for (let i = updated.length - 1; i >= 0; i--) {
+              if (updated[i].title === 'Processing milestone...') {
+                updated[i] = { ...updated[i], summary: message };
+                break;
+              }
+            }
+            return updated;
+          });
+
+        }
+
         // Check for milestone_analysis event (update with final processed data)
         if (event.type === 'milestone_analysis' && event.payload) {
           setMilestones(prev => {

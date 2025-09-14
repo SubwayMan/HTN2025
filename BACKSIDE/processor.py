@@ -176,7 +176,7 @@ class MilestoneProcessor():
             return
         elif event.type == "run_item_stream_event":
             if event.item.type == "tool_call_item":
-                print("-- Tool was called", event.item)
+                print("-- Tool was called")
             elif event.item.type == "tool_call_output_item":
                 if isinstance(event.item.output, str):
                     print(f"-- Tool output: {event.item.output[:500]}")
