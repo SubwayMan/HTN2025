@@ -130,7 +130,7 @@ class MilestoneProcessor():
             )
         )
 
-    async def process_milestone(self, milestone: RawMilestone):
+    async def process_milestone(self, milestone: RawMilestone, event_callback=None):
         prompt = "you're hallucinating a tool call.analyze the current milestone"
         if self.prev_summary is not None:
             prompt += f", this is the previous summary: {self.prev_summary}"
@@ -146,7 +146,10 @@ class MilestoneProcessor():
 
         async for event in result.stream_events():
             self.print_event(event)
-        
+            # Pass events to callback if provided
+            if event_callback:
+                await event_callback(event)
+
         # print("Here's final result: ", result)
 
         result_dict = loads(result.final_output)

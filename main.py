@@ -27,7 +27,7 @@ def sse_frame(data: dict, event_id: Optional[str] = None) -> bytes:
 @app.post("/begin-analysis")
 async def begin_analysis(background: BackgroundTasks, repo: str = Form(...)):
     pid = str(uuid.uuid4())
-    pid = "bongnog"
+    # pid = "bongnog"  # Commented out for unique IDs
     pipeline.add_process(pid)
     # fire-and-forget
     background.add_task(pipeline.run_pipeline, pid, repo)
