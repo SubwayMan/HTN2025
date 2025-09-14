@@ -5,6 +5,7 @@ import shutil
 
 from BACKSIDE.fetcher import DataFetcher
 from BACKSIDE.milestones import get_milestone_data
+
 from BACKSIDE.processor import MilestoneProcessor
 
 
@@ -49,7 +50,9 @@ if last_commit.hash != commits[-1].hash:
 
 # Create evenly spaced milestones
 num_commits = len(commits)
-target_milestones = min(10, num_commits - 1)  # Can't have more milestones than commit pairs
+target_milestones = min(
+    10, num_commits - 1
+)  # Can't have more milestones than commit pairs
 
 milestones = []
 if target_milestones > 0:
@@ -67,13 +70,12 @@ if target_milestones > 0:
         if end_idx >= num_commits:
             end_idx = num_commits - 1
 
-
         print(f"Start idx: {start_idx}, End idx: {end_idx}")
         milestone = get_milestone_data(commits[start_idx], commits[end_idx])
         milestones.append(milestone)
 
         # Move start to next position (non-overlapping)
-        start_idx = end_idx + 1
+        start_idx = end_idx
 
         # Stop if we've covered all commits
         if start_idx >= num_commits:
@@ -109,5 +111,3 @@ asyncio.run(main())
 #     elif command == "diff":
 #         filename = args[0]
 #         print(milestone.get_diff_for_file(filename))
-
-

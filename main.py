@@ -6,6 +6,9 @@ from typing import Dict, List, Optional, Tuple
 from fastapi import FastAPI, Form, HTTPException, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from BACKSIDE.integration import Pipeline
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -37,46 +40,7 @@ async def analysis_sse(pid: str, request: Request):
     if not p:
         raise HTTPException(404, "Unknown analysis id")
 
-    # Support replay and resume:
-    #  - If client sends Last-Event-ID header, start *after* that id.
-    #  - Otherwise, start from the beginning.
-    last_event_id = request.headers.get("last-event-id")
-
-    async def gen():
-        # 1) Replay buffered events
-        idx = p.index_from_last_event_id(last_event_id)
-        while idx < len(p.events):
-            if await request.is_disconnected():
-                return
-            eid, evt = p.events[idx]
-            yield sse_frame(evt, eid)
-            idx += 1
-
-        # 2) Tail new events until done and buffer is drained
-        while True:
-            if await request.is_disconnected():
-                return
-
-            # If there are new buffered events, flush them without waiting
-            while idx < len(p.events):
-                eid, evt = p.events[idx]
-                yield sse_frame(evt, eid)
-                idx += 1
-
-            # If pipeline is done and all buffered events are sent, exit
-            if p.done and idx >= len(p.events):
-                return
-
-            # Otherwise wait for more events or completion
-            async with p._cond:
-                try:
-                    await asyncio.wait_for(p._cond.wait(), timeout=1.0)
-                except asyncio.TimeoutError:
-                    # loop back to check done/disconnect/new events
-                    pass
-
     return StreamingResponse(
-        gen(),
+        pipeline.get_stream(pid),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
     )
