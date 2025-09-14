@@ -38,6 +38,7 @@ class RawMilestone:
             "git",
             "--no-pager",
             "diff",
+            "-U0",
             f"{self.start_commit_hash}..{self.end_commit_hash}",
             "--",
             filechange,
