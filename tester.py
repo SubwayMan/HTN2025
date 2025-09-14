@@ -37,16 +37,17 @@ def print_unix_timestamp(timestamp):
     print(formatted_date)
 
 
-testrepo = "patrick-gu/toot"
+testrepo = "cyiuhim/shower-scribe"
 d = DataFetcher()
 empty_directory("./workspace")
 repo = d.fetch_github_repository(testrepo, "./workspace", use_https=True)
-commits = d.get_commit_log(repo)
+commits = d.get_merge_commit_log(repo)
 first_commit = d.get_boundary_commit(repo)
 last_commit = d.get_boundary_commit(repo, False)
 commits = [first_commit] + commits
 if last_commit.hash != commits[-1].hash:
     commits.append(last_commit)
+exit(0)
 
 # Create evenly spaced milestones
 num_commits = len(commits)
@@ -94,11 +95,13 @@ for i, milestone in enumerate(milestones):
     print("Milestone end:")
     print_unix_timestamp(milestone.time_end)
 
+
 async def main():
     processor = MilestoneProcessor()
 
     for m in milestones[:5]:
         await processor.process_milestone(m)
+
 
 asyncio.run(main())
 

@@ -153,7 +153,13 @@ class DataFetcher:
         if first:
             try:
                 # STEP 1: Run the inner command to get the root commit hash
-                rev_list_command = ["git", "rev-list", "--max-parents=0", "HEAD"]
+                rev_list_command = [
+                    "git",
+                    "rev-list",
+                    "--first-parent",
+                    "--max-parents=0",
+                    "HEAD",
+                ]
                 rev_list_result = sp.run(
                     rev_list_command,
                     cwd=repository,
