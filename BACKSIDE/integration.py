@@ -75,11 +75,15 @@ class Pipeline:
             # if last_commit.hash != commits[-1].hash:
             # commits.append(last_commit)
 
-            milestone_count = 0
-            async for milestone in generate_milestones_with_heuristic(45, df, repopath):
-                if milestone_count >= 3:
-                    break
-                milestone_count += 1
+            limit = 10
+            a = 0
+
+            async for milestone in generate_milestones_with_heuristic(
+                4000.0, df, repopath
+            ):
+                # a += 1
+                # if a >= limit:
+                # break
                 # Send milestone info
                 await p.put(
                     encode_payload(
@@ -133,6 +137,8 @@ class Pipeline:
                             {"type": "milestone_error", "payload": {"error": str(e)}}
                         )
                     )
+                print("Processed milestone")
+            print("Finished")
 
             await p.put(encode_payload({"type": "end", "payload": {"status": "done"}}))
         except Exception as e:
