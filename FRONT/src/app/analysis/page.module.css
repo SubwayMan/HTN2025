@@ -63,6 +63,22 @@
   color: rgb(241 245 249);
 }
 
+.appTitle {
+  background: linear-gradient(to right, rgb(239 68 68), rgb(139 92 246));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+.container.darkMode .appTitle {
+  background: linear-gradient(to right, rgb(139 92 246), rgb(239 68 68));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
 .navActions {
   display: flex;
   align-items: center;
@@ -198,4 +214,30 @@
 .themeIcon {
   width: 1.25rem;
   height: 1.25rem;
+}
+
+.loadingIndicator {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.darkMode .spinner {
+  border-color: #374151;
+  border-top-color: #60a5fa;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

@@ -26,6 +26,26 @@
   letter-spacing: -0.025em;
 }
 
+.appTitle {
+  background: linear-gradient(90deg, rgb(239 68 68), rgb(139 92 246), rgb(239 68 68));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  animation: gradientShift 8s ease-in-out infinite;
+}
+
+.container.darkMode .appTitle {
+  background: linear-gradient(90deg, rgb(139 92 246), rgb(239 68 68), rgb(139 92 246));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  animation: gradientShift 8s ease-in-out infinite;
+}
+
 @media (min-width: 768px) {
   .title {
     font-size: 6rem;
@@ -145,4 +165,13 @@
 .themeIcon {
   width: 1.25rem;
   height: 1.25rem;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }

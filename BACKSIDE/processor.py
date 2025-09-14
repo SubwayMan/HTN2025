@@ -108,7 +108,7 @@ class MilestoneProcessor():
         # cerebras_api_key = os.environ["CEREBRAS_API_KEY"]
 
         self.prev_summary = None
-        self.prev_prev_summary = None
+        # self.prev_prev_summary = None
         self.current_task = None  # Store current asyncio task for cancellation
 
         with open(os.path.join(os.path.dirname(__file__), "prompt.txt"), "r") as f:
@@ -137,11 +137,11 @@ class MilestoneProcessor():
 
     async def process_milestone(self, milestone: RawMilestone, event_callback=None):
 
-        prompt = "you're hallucinating a tool call.analyze the current milestone"
+        prompt = "analyze the current milestone" # you're hallucinating a tool call
         if self.prev_summary is not None:
             prompt += f", this is the previous summary: {self.prev_summary}"
-        if self.prev_prev_summary is not None:
-            prompt += f", this is the previous previous summary: {self.prev_prev_summary}"
+        # if self.prev_prev_summary is not None:
+        #     prompt += f", this is the previous previous summary: {self.prev_prev_summary}"
 
         result = Runner.run_streamed(
             self.overview_agent,
@@ -159,8 +159,8 @@ class MilestoneProcessor():
         # print("Here's final result: ", result)
 
         result_dict = loads(result.final_output)
-        if self.prev_summary is not None:
-            self.prev_prev_summary = self.prev_summary
+        # if self.prev_summary is not None:
+        #     self.prev_prev_summary = self.prev_summary
         self.prev_summary = result_dict["summary"]
 
         print(result_dict)
@@ -176,7 +176,7 @@ class MilestoneProcessor():
             return
         elif event.type == "run_item_stream_event":
             if event.item.type == "tool_call_item":
-                print("-- Tool was called")
+                print("-- Tool was called", event.item)
             elif event.item.type == "tool_call_output_item":
                 if isinstance(event.item.output, str):
                     print(f"-- Tool output: {event.item.output[:500]}")

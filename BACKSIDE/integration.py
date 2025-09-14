@@ -1,4 +1,5 @@
 import asyncio
+from agents import ItemHelpers
 import json
 import dataclasses
 import re
@@ -17,6 +18,23 @@ def decode_payload(data: str) -> dict:
     json_str = data.replace("data: ", "").strip()
     return json.loads(json_str)
 
+
+def get_tool_call_message(item) -> str:
+    tool_name = item.raw_item.name
+
+    tool_messages = {
+        "get_time_stats": "Getting timeline information...",
+        "get_message_stats": "Analyzing commit message statistics...",
+        "get_messages": "Retrieving commit messages...",
+        "get_longest_n_messages": "Finding longest commit messages...",
+        "get_file_change_stats": "Calculating file change statistics...",
+        "get_file_changes": "Analyzing file changes...",
+        "get_file_changes_by_status": "Filtering file changes by type...",
+        "get_top_n_file_changes": "Finding most significant file changes...",
+        "get_file_diff": "Examining detailed file differences..."
+    }
+
+    return tool_messages.get(tool_name, f"Processing {tool_name}...")
 
 class Pipeline:
     def __init__(self):
@@ -57,7 +75,11 @@ class Pipeline:
             # if last_commit.hash != commits[-1].hash:
             # commits.append(last_commit)
 
+            milestone_count = 0
             async for milestone in generate_milestones_with_heuristic(45, df, repopath):
+                if milestone_count >= 3:
+                    break
+                milestone_count += 1
                 # Send milestone info
                 await p.put(
                     encode_payload(
@@ -81,7 +103,19 @@ class Pipeline:
                                         {
                                             "type": "processing_update",
                                             "payload": {
-                                                "message": "AI analyzing milestone..."
+                                                "message": ItemHelpers.text_message_output(event.item)
+                                            },
+                                        }
+                                    )
+                                )
+                            
+                            if event.item.type == "tool_call_item":
+                                await p.put(
+                                    encode_payload(
+                                        {
+                                            "type": "processing_update",
+                                            "payload": {
+                                                "message": get_tool_call_message(event.item)
                                             },
                                         }
                                     )
